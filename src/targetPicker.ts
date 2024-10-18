@@ -5,7 +5,7 @@ import * as android from './android';
 
 let context: vscode.ExtensionContext;
 
-export type TargetType = "Device" | "Emulator";
+export type TargetType = "Device" | "Emulator" | "127.0.0.1";
 
 export interface Target extends VerboseDevice {
     name: string,
@@ -27,17 +27,26 @@ var currentTarget: Device|undefined;
 async function createTargetFromDevice(device: VerboseDevice): Promise<Target> {
     let deviceAdb = await android.getDeviceAdb(device);
 
-    let type : TargetType = device.udid.startsWith("emulator-") ? "Emulator" : "Device";
+    let type : TargetType
+    if (device.udid.startsWith("emulator-")){
+        type = "Emulator"
+    }else if(device.udid.startsWith("127.0.0.1")){
+        type = "127.0.0.1"
+    }else{
+        type = "Device"
+    }
 
-    let name = undefined;
-    let avdName = undefined;
-    if (type === "Emulator") {
-        avdName = await deviceAdb.sendTelnetCommand("avd name");
-        name = await android.getAvdDisplayName(avdName) || device.udid;
-    }
-    else {
-        name = await deviceAdb.getModel();
-    }
+    //let name = undefined;
+    //let avdName = undefined;
+    //if (type === "Emulator") {
+    //    avdName = await deviceAdb.sendTelnetCommand("avd name");
+    //    name = await android.getAvdDisplayName(avdName) || device.udid;
+    //}
+    //else {
+    //    name = await deviceAdb.getModel();
+    //}
+    let name = device.udid
+    let avdName = device.udid
 
     return {
         ...device,
@@ -102,16 +111,16 @@ async function getTargetPickerItems(): Promise<TargetQuickPickItem[]> {
         });
     }
 
-    targetPickerItems.push(
-        ...
-        await Promise.all(avdList.map(async (avdName): Promise<TargetQuickPickItem> => ({
-            label: `$(vm-running) ${await android.getAvdDisplayName(avdName)}`,
-            detail: "Emulator · Stopped",
-            getTarget: async () => {
-                return await android.launchAVD(avdName);
-            }
-        })))
-    );
+   // targetPickerItems.push(
+   //     ...
+   //     await Promise.all(avdList.map(async (avdName): Promise<TargetQuickPickItem> => ({
+   //         label: `$(vm-running) ${await android.getAvdDisplayName(avdName)}`,
+   //         detail: "Emulator · Stopped",
+   //         getTarget: async () => {
+   //             return await android.launchAVD(avdName);
+   //         }
+   //     })))
+   // );
 
     return targetPickerItems;
 }
